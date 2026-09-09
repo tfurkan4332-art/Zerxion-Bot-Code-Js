@@ -1,4 +1,4 @@
-// index.js — Zerxion Yardım Menüsü (Final Sürüm)
+// index.js — Zerxion Yardım Menüsü 
 import {
   Client, GatewayIntentBits, EmbedBuilder, Colors,
   ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle
