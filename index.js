@@ -1,4 +1,4 @@
-// index.js — Zerxion Yardım Menüsü 
+// index.js — Zerxion Yardım Menüsü (v4 — Garantili Interaction)
 import {
   Client, GatewayIntentBits, EmbedBuilder, Colors,
   ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle
@@ -172,31 +172,7 @@ function altButonlar() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  PREFIX KOMUTLARI
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-  if (!message.content.startsWith(PREFIX)) return;
-
-  const args = message.content.slice(PREFIX.length).trim().split(/ +/);
-  const command = args.shift().toLowerCase();
-
-  if (['yardim', 'yardım', 'help', 'komutlar'].includes(command)) {
-    await gonder(message, {
-      embeds: [anaMenuEmbed(message.author)],
-      components: [yardimMenu(null), altButonlar()]
-    });
-  }
-
-  if (command === 'ping') {
-    const sent = await gonder(message, '🏓 Ölçülüyor...');
-    const gecikme = sent.createdTimestamp - message.createdTimestamp;
-    await sent.edit(`🏓 **Pong!** Gecikme: \`${gecikme}ms\``);
-  }
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  INTERACTION İŞLEYİCİ
+//  INTERACTION İŞLEYİCİ — RAW JSON + REST FALLBACK
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 client.on('interactionCreate', async (interaction) => {
   try {
@@ -209,31 +185,70 @@ client.on('interactionCreate', async (interaction) => {
         return;
       }
 
-      const embed = kategoriEmbed(secilen, interaction.user);
+      // HEPSİNİ RAW JSON'A ÇEVİR — builder dönüşümü sorunlarını tamamen ezer
+      const embed = kategoriEmbed(secilen, interaction.user).toJSON();
+      const menu = yardimMenu(secilen).toJSON();
+      const buttons = altButonlar().toJSON();
 
-      await interaction.update({
-        embeds: [embed],
-        components: [yardimMenu(secilen), altButonlar()]
-      });
+      try {
+        await interaction.update({ embeds: [embed], components: [menu, buttons] });
+      } catch (updateErr) {
+        // update patlarsa REST API üzerinden mesajı güncelle (type 7)
+        console.error('[Zerxion] update başarısız, REST deneniyor:', updateErr.message);
+        await client.rest.createInteractionResponse(interaction.id, interaction.token, {
+          type: 7,
+          data: { embeds: [embed], components: [menu, buttons] }
+        });
+      }
       return;
     }
 
     // Buton: ana menüye dön
     if (interaction.customId === 'zerxion_anamenu') {
-      await interaction.update({
-        embeds: [anaMenuEmbed(interaction.user)],
-        components: [yardimMenu(null), altButonlar()]
-      });
+      const embed = anaMenuEmbed(interaction.user).toJSON();
+      const menu = yardimMenu(null).toJSON();
+      const buttons = altButonlar().toJSON();
+
+      try {
+        await interaction.update({ embeds: [embed], components: [menu, buttons] });
+      } catch (updateErr) {
+        console.error('[Zerxion] update başarısız, REST deneniyor:', updateErr.message);
+        await client.rest.createInteractionResponse(interaction.id, interaction.token, {
+          type: 7,
+          data: { embeds: [embed], components: [menu, buttons] }
+        });
+      }
       return;
     }
   } catch (err) {
     console.error('[Zerxion] Interaction hatası:', err);
     try {
-      await interaction.reply({
-        content: '❌ Bir hata oluştu!',
-        ephemeral: true
-      });
+      await interaction.reply({ content: '❌ Bir hata oluştu!', ephemeral: true });
     } catch {}
+  }
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PREFIX KOMUTLARI
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+  if (!message.content.startsWith(PREFIX)) return;
+
+  const args = message.content.slice(PREFIX.length).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
+
+  if (['yardim', 'yardım', 'help', 'komutlar'].includes(command)) {
+    await gonder(message, {
+      embeds: [anaMenuEmbed(message.author).toJSON()],
+      components: [yardimMenu(null).toJSON(), altButonlar().toJSON()]
+    });
+  }
+
+  if (command === 'ping') {
+    const sent = await gonder(message, '🏓 Ölçülüyor...');
+    const gecikme = sent.createdTimestamp - message.createdTimestamp;
+    await sent.edit(`🏓 **Pong!** Gecikme: \`${gecikme}ms\``);
   }
 });
 
@@ -248,4 +263,4 @@ client.on('error', (error) => {
   console.error('Client hatası:', error);
 });
 
-await client.login(process.env.BOT_TOKEN);
+await client.login('1a9d2d88adfb4b8ca4709a42f7f59a284f0d4b643e9838a162ac5b70b36ea06b');
