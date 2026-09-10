@@ -263,4 +263,4 @@ client.on('error', (error) => {
   console.error('Client hatası:', error);
 });
 
-await client.login('1a9d2d88adfb4b8ca4709a42f7f59a284f0d4b643e9838a162ac5b70b36ea06b');
+await client.login(process.env.BOT_TOKEN);
