@@ -263,4 +263,4 @@ client.on('error', (error) => {
   console.error('Client hatası:', error);
 });
 
-await client.login(process.env.BOT_TOKEN);
+await client.login(process.env.BOT_TOKEN_TECHRAWEN);
